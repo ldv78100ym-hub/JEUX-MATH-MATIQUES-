@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIVEAU 1 : PEDAGOGIE EXPLICITE</title>
+    <style>
+        :root {
+            --bg-color: #020617;
+            --panel-bg: #1e293b;
+            --text-main: #f8fafc;
+            --accent: #38bdf8;
+            --success: #4ade80;
+            --danger: #f87171;
+            --gold: #fbbf24;
+            --path-bg: #334155;
+            --path-active: #0ea5e9;
+            --font: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- CARTE AVEC CHEMIN LUMINEUX --- */
+        .map-container {
+            width: 100%; max-width: 800px; height: 180px;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            border-radius: 12px; border: 1px solid #475569;
+            margin-bottom: 5px; position: relative; overflow: hidden;
+            box-shadow: 0 0 30px rgba(14, 165, 233, 0.1);
+        }
+        .map-svg { width: 100%; height: 100%; }
+        
+        .map-path-bg { 
+            fill: none; stroke: var(--path-bg); stroke-width: 8px;
+            stroke-linecap: round; stroke-dasharray: 10; opacity: 0.5;
+        }
+        
+        .map-path-fill { 
+            fill: none; stroke: var(--path-active); stroke-width: 8px;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 5px var(--path-active));
+            transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+            stroke-dasharray: 2000; stroke-dashoffset: 2000; 
+        }
+
+        .map-node { fill: #1e293b; stroke: #64748b; stroke-width: 3px; transition: all 0.5s; z-index: 2; }
+        .map-node.active { fill: var(--bg-color); stroke: var(--accent); stroke-width: 4px; filter: drop-shadow(0 0 10px var(--accent)); transform: scale(1.2); }
+        .map-node.done { fill: var(--path-active); stroke: #fff; }
+        
+        .player-token { 
+            transition: cx 1s, cy 1s; fill: var(--gold); stroke: #fff; stroke-width: 2px; 
+            filter: drop-shadow(0 0 8px var(--gold)); pointer-events: none;
+        }
+        .map-label { font-size: 10px; fill: #94a3b8; font-weight: bold; text-anchor: middle; font-family: monospace; }
+        
+        /* --- INTERFACE --- */
+        .container {
+            width: 100%; max-width: 800px;
+            background-color: var(--panel-bg);
+            border-radius: 12px; padding: 30px;
+            border: 1px solid #475569;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+
+        .region-badge {
+            position: absolute; top: -15px; right: 20px;
+            background: var(--accent); color: #000;
+            padding: 5px 15px; border-radius: 20px;
+            font-weight: bold; font-size: 0.8em; letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+            text-transform: uppercase;
+            display: flex; gap: 10px; align-items: center;
+        }
+        
+        .mission-counter-badge {
+            background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 10px; color: white;
+        }
+
+        h1 { text-align: center; color: var(--accent); margin-top: 0; border-bottom: 2px solid #334155; padding-bottom: 15px; font-size: 1.4em; letter-spacing: 2px; }
+
+        .status-bar {
+            display: flex; justify-content: space-between; gap: 8px; margin-bottom: 25px;
+            background: #0f172a; padding: 8px; border-radius: 8px; border: 1px solid #334155;
+        }
+        .status-step {
+            flex: 1; text-align: center; font-size: 0.75em; font-weight: bold;
+            color: #64748b; padding: 6px; border-radius: 4px;
+            background: #1e293b; display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: all 0.3s;
+        }
+        .status-dot { width: 8px; height: 8px; background: #475569; border-radius: 50%; }
+        
+        .status-step.success { color: #fff; background: rgba(74, 222, 128, 0.1); border: 1px solid var(--success); }
+        .status-step.success .status-dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
+
+        .mission-box {
+            background: linear-gradient(90deg, #0f172a 0%, #172033 100%);
+            border-left: 4px solid var(--accent);
+            padding: 25px; margin-bottom: 30px; font-size: 1.15em; line-height: 1.6;
+            border-radius: 0 8px 8px 0; color: #e2e8f0;
+        }
+        .mission-box p { margin: 10px 0; }
+        .question-text { 
+            margin-top: 20px; font-weight: bold; color: var(--gold); 
+            display: block; border-top: 1px solid #334155; padding-top: 15px; 
+            font-size: 1.1em;
+        }
+
+        .input-group { margin-bottom: 25px; position: relative; }
+        label { display: block; margin-bottom: 8px; font-weight: 700; text-transform: uppercase; color: var(--accent); font-size: 0.8em; letter-spacing: 0.5px; }
+        
+        .input-indicator {
+            position: absolute; right: 12px; top: 40px;
+            font-size: 1.2em; opacity: 0; transition: all 0.5s; transform: scale(0);
+        }
+        .input-indicator.valid { color: var(--success); opacity: 1; transform: scale(1); text-shadow: 0 0 10px var(--success); }
+
+        input[type="text"], textarea {
+            width: 100%; background-color: #020617; border: 1px solid #475569; color: #fff;
+            padding: 12px; font-size: 1.1em; border-radius: 6px; box-sizing: border-box;
+            font-family: 'Courier New', monospace; transition: all 0.3s;
+        }
+        input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 15px rgba(56, 189, 248, 0.1); }
+        .input-valid { border-color: var(--success) !important; background-color: rgba(74, 222, 128, 0.05) !important; }
+
+        button {
+            background: linear-gradient(135deg, var(--accent) 0%, #0284c7 100%);
+            color: #fff; border: none; padding: 16px;
+            font-weight: bold; font-size: 1.1em; cursor: pointer; width: 100%; border-radius: 8px;
+            text-transform: uppercase; margin-top: 10px; transition: 0.3s; letter-spacing: 1px;
+        }
+        button:hover { filter: brightness(1.2); transform: translateY(-1px); }
+        button:disabled { background: #475569; cursor: not-allowed; transform: none; }
+
+        /* ZONE D'EXPLICATION */
+        #feedback-area { margin-top: 25px; display: none; animation: slideIn 0.4s; }
+        .sol-container { 
+            background: #1e293b; border: 2px solid var(--danger); border-radius: 12px; padding: 25px; 
+            color: #fca5a5; position: relative; overflow: hidden;
+        }
+        .sol-title { color: var(--danger); font-size: 1.2em; margin-bottom: 15px; border-bottom: 1px solid var(--danger); padding-bottom: 10px; }
+        
+        .didactic-step {
+            margin-bottom: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;
+            border-left: 3px solid var(--gold);
+        }
+        .didactic-step h4 { margin: 0 0 5px 0; color: var(--gold); font-size: 0.9em; text-transform: uppercase; }
+        .math-highlight { font-family: 'Courier New', monospace; font-weight: bold; color: #fff; }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            margin-top: 20px;
+        }
+
+        /* --- CREDITS SECTION --- */
+        .btn-credits {
+            background: transparent !important;
+            border: 1px solid #475569 !important;
+            color: #94a3b8 !important;
+            font-size: 0.8rem !important;
+            padding: 10px !important;
+            width: auto !important;
+            display: block;
+            margin: 30px auto 0 auto !important;
+            text-transform: none !important;
+            letter-spacing: 0 !important;
+        }
+        .btn-credits:hover { background: rgba(255,255,255,0.05) !important; color: #fff !important; transform: none !important; }
+
+        .credits-box {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #334155;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            text-align: left;
+            animation: fadeIn 0.3s;
+        }
+        .credits-box h3 {
+            color: var(--gold);
+            font-size: 1em;
+            margin-bottom: 10px;
+            border-bottom: none;
+            text-align: left;
+            padding-bottom: 0;
+        }
+        .credits-box p { margin: 5px 0; line-height: 1.4; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* MODAL */
+        .levelup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        .levelup-box {
+            background: #1e293b; padding: 40px; border-radius: 16px; text-align: center;
+            border: 2px solid var(--gold); max-width: 500px;
+        }
+        .btn-gold { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000; font-weight: bold; border:none; padding: 15px 30px; border-radius: 30px; cursor: pointer;}
+    </style>
+</head>
+<body>
+
+<div class="map-container">
+    <svg class="map-svg" viewBox="0 0 800 180">
+        <defs>
+            <path id="routePath" d="M 50 140 Q 200 140, 250 90 T 400 90 T 600 90 T 780 50" />
+        </defs>
+        <use href="#routePath" class="map-path-bg" />
+        <use href="#routePath" class="map-path-fill" id="map-fill" />
+        
+        <circle cx="50" cy="140" r="14" class="map-node active" id="node-1" /><text x="50" y="170" class="map-label">BASE</text>
+        <circle cx="250" cy="90" r="12" class="map-node" id="node-2" /><text x="250" y="120" class="map-label">USINE</text>
+        <circle cx="400" cy="90" r="12" class="map-node" id="node-3" /><text x="400" y="120" class="map-label">FORÊT</text>
+        <circle cx="600" cy="90" r="12" class="map-node" id="node-4" /><text x="600" y="120" class="map-label">PORT</text>
+        <text x="780" y="50" style="font-size:24px; pointer-events:none;">🏰</text>
+        <circle cx="50" cy="140" r="8" class="player-token" id="player" />
+    </svg>
+</div>
+
+<div class="container">
+    <div class="region-badge" id="region-badge">
+        <span id="region-name">ZONE 1</span>
+        <span id="mission-counter" class="mission-counter-badge">1/3</span>
+    </div>
+    
+    <h1 id="mission-title">📡 TERMINAL DE MISSION</h1>
+
+    <div class="status-bar">
+        <div class="status-step" id="step-1"><div class="status-dot"></div> MODÈLE</div>
+        <div class="status-step" id="step-2"><div class="status-dot"></div> LIMITES</div>
+        <div class="status-step" id="step-3"><div class="status-dot"></div> RAPPORT</div>
+    </div>
+    
+    <div id="mission-content" class="mission-box">
+        Initialisation du système narratif...
+    </div>
+    
+    <div class="input-group">
+        <label>1. MODÉLISATION (Équation)</label>
+        <input type="text" id="input-model" placeholder="Ex: 120x + 50 <= 1000">
+        <span class="input-indicator" id="ind-1">✔</span>
+    </div>
+    
+    <div class="input-group">
+        <label>2. RÉSULTAT (Limite)</label>
+        <input type="text" id="input-resolve" placeholder="Valeur numérique limite">
+        <span class="input-indicator" id="ind-2">✔</span>
+    </div>
+    
+    <div class="input-group">
+        <label>3. CONCLUSION</label>
+        <textarea id="input-redact" rows="2" placeholder="Réponse avec unité..."></textarea>
+        <span class="input-indicator" id="ind-3">✔</span>
+    </div>
+    
+    <button id="submit-btn" onclick="checkAnswers()">🔍 LANCER L'ANALYSE</button>
+    <button id="final-btn" onclick="goToNextLevel()" style="display:none;" class="btn-gold">🚀 ACCÈS NIVEAU 2</button>
+    
+    <div id="feedback-area"></div>
+
+    <button onclick="toggleCredits()" class="btn-credits">© Crédits & Droits</button>
+    <div id="credits-area" class="credits-box">
+        <h3>Droits d'Auteur et Source</h3>
+        <p><strong>Auteur du problème :</strong> Yann Merdy</p>
+        <p><strong>Droits d'Auteur et Utilisation :</strong></p>
+        <p>Ce contenu, y compris l'énoncé, les solutions et le code interactif, est protégé par les droits d'auteur. <strong>Toute utilisation à des fins commerciales, y compris la revente, la distribution ou l'intégration dans des produits commerciaux, est strictement interdite sans autorisation écrite explicite de l'auteur.</strong></p>
+        <p>L'utilisation est limitée à des fins éducatives et personnelles non commerciales.</p>
+    </div>
+</div>
+
+<div class="levelup-overlay" id="levelup-modal">
+    <div class="levelup-box">
+        <div id="modal-emoji" style="font-size:3em;">⭐</div>
+        <div style="color:var(--gold); font-size:1.5em; margin:10px 0;">ZONE SÉCURISÉE</div>
+        <div id="levelup-msg"></div>
+        <button onclick="closeLevelUp()" class="btn-gold" style="margin-top:20px;">CONTINUER</button>
+    </div>
+</div>
+
+<script>
+    // --- FONCTION CREDITS ---
+    function toggleCredits() {
+        const area = document.getElementById('credits-area');
+        if (area.style.display === 'block') {
+            area.style.display = 'none';
+        } else {
+            area.style.display = 'block';
+            // Scroll léger pour afficher le texte si nécessaire
+            area.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    // --- MOTEUR DE JEU ---
+    const GAME = { tier: 1, score: 0, required: 3, attempts: 0 };
+    let currentData = {};
+    let pathTotalLength = 2000;
+    const MAX_TRAVEL_STEPS = 4 * GAME.required;
+
+    const REGIONS = {
+        1: { name: "LOGISTIQUE (BASE)", color: "#38bdf8", cx: 50, cy: 140 },
+        2: { name: "FINANCES (USINE)", color: "#4ade80", cx: 250, cy: 90 },
+        3: { name: "SURVIE (FORÊT)", color: "#a855f7", cx: 400, cy: 90 },
+        4: { name: "COMMERCE (PORT)", color: "#f59e0b", cx: 600, cy: 90 },
+        5: { name: "CITADELLE", color: "#ef4444", cx: 780, cy: 50 }
+    };
+
+    const NOISE_DATA = [
+        "Température ext: 12°C.", "Matricule #4588.", "Année fiscale 2025.", 
+        "Altitude: 450m.", "Distance cible: 120km.", "Vitesse vent: 20km/h.",
+        "Lot de production A-12.", "Heure locale 14:30.", "Pression 1013 hPa.",
+        "Ref: XJ-900.", "Quai n°4.", "Code sécurité 1234."
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+        try {
+            const originalPath = document.getElementById('routePath');
+            const visualPath = document.getElementById('map-fill');
+            if (originalPath && visualPath) {
+                pathTotalLength = originalPath.getTotalLength();
+                visualPath.style.strokeDasharray = pathTotalLength;
+                visualPath.style.strokeDashoffset = pathTotalLength;
+            }
+            initGame();
+        } catch (e) { console.error("Err Init:", e); initGame(); }
+    });
+
+    function initGame() {
+        GAME.attempts = 0;
+        resetUI();
+        updateUI();
+        updateMapProgress();
+        generateScenario();
+    }
+
+    function generateScenario() {
+        const tier = GAME.tier;
+        const distractorLevel = GAME.score;
+        let scenario;
+        switch(tier) {
+            case 1: scenario = getZone1Scenario(); break;
+            case 2: scenario = getZone2Scenario(); break;
+            case 3: scenario = getZone3Scenario(); break;
+            case 4: scenario = getZone4Scenario(); break;
+            default: scenario = getZone1Scenario();
+        }
+
+        let storyHTML = `<p>${scenario.text}</p>`;
+        if (distractorLevel > 0) {
+            let noise = NOISE_DATA[Math.floor(Math.random() * NOISE_DATA.length)];
+            if (Math.random() > 0.5) storyHTML += `<p style="color:#94a3b8; font-style:italic;">Note : ${noise}</p>`;
+            else storyHTML = `<p style="color:#94a3b8; font-style:italic;">Info : ${noise}</p>` + storyHTML;
+        }
+        storyHTML += `<span class="question-text">👉 ${scenario.question}</span>`;
+
+        currentData = {
+            solution: scenario.solution,
+            unit: scenario.unit,
+            modelStr: scenario.model,
+            raw: scenario.raw, 
+            type: tier 
+        };
+        document.getElementById('mission-content').innerHTML = storyHTML;
+    }
+
+    // --- ZONES SCÉNARIOS (Mise à jour pour inclure 'raw') ---
+    
+    // --- ZONE 1 : LOGISTIQUE (ax + b <= c, variables a, b ou x) ---
+    function getZone1Scenario() {
+        const templates = [
+            { type: "Ascenseur de service", noun: "caisse(s)", fixed_noun: "technicien", unit_noun: "kg" },
+            { type: "Camion de livraison", noun: "palette(s)", fixed_noun: "camion à vide", unit_noun: "kg" },
+            { type: "Petit pont de bois", noun: "passager(s)", fixed_noun: "véhicule", unit_noun: "kg" }
+        ];
+        const t = templates[Math.floor(Math.random() * templates.length)];
+        
+        // Génération des valeurs
+        let Qty = Math.floor(Math.random() * 8) + 3;      // Quantité (ex: 5)
+        let UnitW = Math.floor(Math.random() * 20) + 10;  // Poids unitaire (ex: 15)
+        let FixedW = Math.floor(Math.random() * 60) + 50; // Poids fixe (ex: 80)
+        let TotalW = (Qty * UnitW) + FixedW;             
+        let Limit = TotalW + Math.floor(Math.random() * 20) + 5; // La limite doit être plus haute que le total exact
+
+        // Choix de l'inconnue
+        let unknownType = Math.floor(Math.random() * 3); // 0: Qty(x), 1: Unit(a), 2: Fixed(b)
+        
+        let text = "";
+        let question = "";
+        let model = "";
+        let solution = 0;
+        let unit = "";
+        let x_name = "";
+
+        if (unknownType === 0) { // Cherche Quantité (x) : ax + b <= c
+            text = `Mission ${t.type}. La limite structurelle est de <b>${Limit} ${t.unit_noun}</b> max. Le poids du ${t.fixed_noun} est <b>${FixedW} ${t.unit_noun}</b>. Il faut charger des ${t.noun.replace('(s)', '')} de <b>${UnitW} ${t.unit_noun}</b> chacune.`;
+            question = `Combien de ${t.noun.replace('(s)', '')} (x) maximum ?`;
+            model = `${UnitW}x + ${FixedW} <= ${Limit}`;
+            solution = Math.floor((Limit - FixedW) / UnitW);
+            unit = t.noun;
+            x_name = `nombre de ${t.noun.replace('(s)', '')}`;
+        } else if (unknownType === 1) { // Cherche Poids Unitaire (a) : Qty*x + b <= c
+            text = `Mission ${t.type}. La limite structurelle est de <b>${Limit} ${t.unit_noun}</b> max. Le poids du ${t.fixed_noun} est <b>${FixedW} ${t.unit_noun}</b>. On charge impérativement <b>${Qty} ${t.noun.replace('(s)', '')}</b> identiques.`;
+            question = `Quel poids unitaire (x) maximum par ${t.noun.replace('(s)', '')} ?`;
+            model = `${Qty}x + ${FixedW} <= ${Limit}`;
+            solution = Math.floor((Limit - FixedW) / Qty); 
+            unit = t.unit_noun;
+            x_name = `poids unitaire par ${t.noun.replace('(s)', '')}`;
+        } else { // Cherche Poids Fixe (b) : a*Qty + x <= c
+            text = `Mission ${t.type}. La limite structurelle est de <b>${Limit} ${t.unit_noun}</b> max. On charge <b>${Qty} ${t.noun.replace('(s)', '')}</b> de <b>${UnitW} ${t.unit_noun}</b> chacune. Il reste de la place pour le matériel fixe (x).`;
+            question = `Quel poids fixe (x) maximum pour le matériel ?`;
+            model = `${Qty * UnitW} + x <= ${Limit}`;
+            solution = Limit - (Qty * UnitW);
+            unit = t.unit_noun;
+            x_name = `poids fixe`;
+        }
+        
+        return { 
+            text, question, model, solution, unit: unit.replace('(s)',''),
+            raw: { a: UnitW, b: FixedW, c: Limit, x_name: x_name, type: unknownType } 
+        };
+    }
+    // --- ZONE 2 : FINANCES (ax + b <= c, coût) ---
+    function getZone2Scenario() {
+        let Budget = Math.floor(Math.random() * 500) + 500;
+        let Fixe = Math.floor(Math.random() * 100) + 50;
+        let Var = Math.floor(Math.random() * 20) + 5;
+        let text = `Budget département : <b>${Budget} €</b>. L'abonnement logiciel coûte <b>${Fixe} €</b> fixe, plus <b>${Var} €</b> par utilisateur supplémentaire.`;
+        let question = "Nombre d'utilisateurs (x) max ?";
+        let model = `${Var}x + ${Fixe} <= ${Budget}`;
+        let solution = Math.floor((Budget - Fixe) / Var);
+        return { 
+            text, question, model, solution, unit: "utilisateurs",
+            raw: { a: Var, b: Fixe, c: Budget, x_name: "nombre d'utilisateurs" }
+        };
+    }
+
+    // --- ZONE 3 : FORÊT (Décroissance c - ax >= b) ---
+    function getZone3Scenario() {
+        let Reserve = Math.floor(Math.random() * 500) + 500; 
+        let Conso = Math.floor(Math.random() * 20) + 10;    
+        let Min = 100; 
+        let text = `Réservoir d'eau endommagé. Volume actuel : <b>${Reserve} Litres</b>. La fuite est de <b>${Conso} L/h</b>. Le niveau de sécurité minimal est de <b>${Min} Litres</b>.`;
+        let question = "Combien d'heures (x) avant l'alerte ?";
+        let model = `${Reserve} - ${Conso}x >= ${Min}`;
+        let solution = Math.floor((Reserve - Min) / Conso);
+        return { 
+            text, question, model, solution, unit: "heures",
+            raw: { start: Reserve, loss: Conso, min: Min }
+        };
+    }
+
+    // --- ZONE 4 : PORT (Pourcentages 1.x * a <= b) ---
+    function getZone4Scenario() {
+        let Budget = Math.floor(Math.random() * 500) + 300;
+        let Taxe = 20; 
+        let text = `Douane Portuaire. Une taxe de <b>${Taxe}%</b> est appliquée sur la valeur déclarée. Vous avez <b>${Budget} €</b> en poche.`;
+        let question = "Quelle valeur déclarée (x) max ?";
+        let model = `1.2x <= ${Budget}`;
+        let solution = Math.floor(Budget / 1.2);
+        return { 
+            text, question, model, solution, unit: "€",
+            raw: { coeff: 1.2, budget: Budget }
+        };
+    }
+
+    // --- GÉNÉRATEUR D'EXPLICATION DIDACTIQUE ---
+    function generateExplanation() {
+        let r = currentData.raw;
+        let html = "";
+        let modelStr = currentData.modelStr.replace(/<=/g, '&le;').replace(/>=/g, '&ge;');
+
+        if (currentData.type === 1 || currentData.type === 2) {
+            // Cas ax + b <= c ou Qty*x + b <= c ou Qty*a + x <= c
+            let step1_calc, step2_calc, final_sol;
+            let step1_text, step2_text;
+            let unit_a = r.a;
+            let unit_b = r.b;
+
+            if (r.type === 2) { // Cherche Poids Fixe (b) : Qty*UnitW + x <= Limit
+                unit_a = r.a * r.b; // Multiplie Qty par Poids Unitaire
+                unit_b = 0;
+                step1_calc = r.c - unit_a;
+                final_sol = step1_calc;
+
+                step1_text = `On calcule le poids déjà engagé (produit des ${r.x_name} et de leur poids unitaire) : ${r.a} * ${r.b} = ${unit_a}.`;
+                step2_text = `On soustrait ce poids à la limite totale : ${r.c} - ${unit_a}.`;
+
+                html += `
+                <div class="didactic-step">
+                    <h4>1. Modélisation : Identifier le Poids Fixe (x)</h4>
+                    <p>Le poids des ${r.x_name} est un montant connu : ${r.a} * ${r.b} = ${unit_a}.</p>
+                    <p>L'inéquation est : Poids Connu + Poids Fixe (x) &le; Limite</p>
+                    <p class="math-highlight">${unit_a} + x &le; ${r.c}</p>
+                </div>`;
+            } else { // Cherche Qty (x) ou Poids Unitaire (a) : a/Qty * x + b <= c
+                step1_calc = r.c - r.b;
+                step2_calc = (step1_calc / r.a).toFixed(2);
+                final_sol = Math.floor(step1_calc / r.a);
+
+                step1_text = `On enlève d'abord la partie fixe (${r.b}) du total autorisé (${r.c}) : ${r.c} - ${r.b} = ${step1_calc}. C'est le poids/budget restant pour les éléments variables.`;
+                step2_text = `On divise le restant (${step1_calc}) par la valeur unitaire (${r.a}) : ${step1_calc} / ${r.a}.`;
+
+                html += `
+                <div class="didactic-step">
+                    <h4>1. Modélisation : Traduire en Inéquation</h4>
+                    <p>Le <b>${r.x_name}</b> est l'inconnue (x).</p>
+                    <p>Inéquation : (Valeur unitaire x x) + Valeur fixe &le; Limite Totale</p>
+                    <p class="math-highlight">${modelStr}</p>
+                </div>`;
+            }
+
+            html += `
+            <div class="didactic-step">
+                <h4>2. Résolution (Isoler x)</h4>
+                <p>${step1_text}</p>
+                <p class="math-highlight">${r.a}x &le; ${step1_calc}</p>
+                <p>${step2_text}</p>
+                <p class="math-highlight">x &le; ${step2_calc}</p>
+            </div>
+            <div class="didactic-step">
+                <h4>3. Conclusion</h4>
+                <p>Comme on doit prendre un nombre entier (on ne peut pas avoir 0.5 caisse), on garde la partie entière (Arrondi Inférieur).</p>
+                <p><b>Réponse : ${final_sol} ${currentData.unit}</b></p>
+            </div>`;
+        } 
+        else if (currentData.type === 3) {
+            // Cas décroissance (c - ax >= b)
+            let step1_calc = r.start - r.min;
+            let final_sol = Math.floor(step1_calc / r.loss);
+            
+            html += `
+            <div class="didactic-step">
+                <h4>1. Raisonnement : Identifier la marge de perte</h4>
+                <p>Le niveau de sécurité est ${r.min}L. La réserve de départ est ${r.start}L.</p>
+                <p>La quantité maximale (marge) que l'on peut perdre est : ${r.start} - ${r.min} = <span class="math-highlight">${step1_calc} Litres</span>.</p>
+                <p>L'inéquation est : Quantité perdue &le; Marge Max.</p>
+            </div>
+            <div class="didactic-step">
+                <h4>2. Calcul (Temps)</h4>
+                <p>La fuite est de ${r.loss}L par heure (x).</p>
+                <p>Temps (x) = Marge Max / Vitesse de fuite</p>
+                <p>x &le; ${step1_calc} / ${r.loss}</p>
+                <p><b>Réponse : ${final_sol} ${currentData.unit}</b></p>
+            </div>`;
+        }
+        else if (currentData.type === 4) {
+             // Cas pourcentage (1.x * a <= b)
+             let final_sol = Math.floor(r.budget / r.coeff);
+             
+             html += `
+            <div class="didactic-step">
+                <h4>1. Modélisation (Coefficient de Taxe)</h4>
+                <p>Une taxe de ${Math.round((r.coeff - 1) * 100)}% est ajoutée. Cela correspond à multiplier le prix HT (x) par <b>${r.coeff.toFixed(1)}</b>.</p>
+                <p>Inéquation : Coefficient x Prix HT (x) &le; Budget Total</p>
+                <p class="math-highlight">${modelStr}</p>
+            </div>
+            <div class="didactic-step">
+                <h4>2. Calcul</h4>
+                <p>On divise le budget total (${r.budget}) par le coefficient (${r.coeff.toFixed(1)}) pour trouver la valeur maximale HT :</p>
+                <p>x &le; ${r.budget} / ${r.coeff.toFixed(1)}</p>
+                <p><b>Réponse : ${final_sol} ${currentData.unit}</b></p>
+            </div>`;
+        }
+
+        return html;
+    }
+
+    // --- VALIDATION ---
+    function checkAnswers() {
+        GAME.attempts++;
+        const feedback = document.getElementById('feedback-area');
+        feedback.style.display = 'block';
+
+        let modelInput = document.getElementById('input-model').value.replace(/\s/g, '').replace(',', '.').toLowerCase();
+        let resolveInput = parseFloat(document.getElementById('input-resolve').value.replace(',', '.'));
+        let redactInput = document.getElementById('input-redact').value.toLowerCase();
+
+        let checkModel = false;
+        let expectedNums = currentData.modelStr.match(/\d+/g);
+        if (expectedNums) {
+            let allNumsPresent = expectedNums.every(n => modelInput.includes(n));
+            if (allNumsPresent && (modelInput.includes('x') || modelInput.includes('<') || modelInput.includes('>'))) {
+                checkModel = true;
+            }
+        }
+        if(modelInput.length > 5 && modelInput.includes('x')) checkModel = true;
+
+        let checkResolve = Math.abs(resolveInput - currentData.solution) < 0.9;
+        let checkRedact = redactInput.includes(currentData.unit.substring(0,2).toLowerCase());
+
+        toggleStatus('step-1', 'ind-1', document.getElementById('input-model'), checkModel);
+        toggleStatus('step-2', 'ind-2', document.getElementById('input-resolve'), checkResolve);
+        toggleStatus('step-3', 'ind-3', document.getElementById('input-redact'), checkRedact);
+
+        if (checkModel && checkResolve && checkRedact) {
+            feedback.innerHTML = `<div style="background:rgba(74, 222, 128, 0.2); border:1px solid #4ade80; color:#86efac; padding:15px;"><h3>✅ MISSION ACCOMPLIE</h3></div>`;
+            document.getElementById('submit-btn').disabled = true;
+            addScore(); 
+        } else {
+            if (GAME.attempts >= 3) {
+                 // --- ECHEC CRITIQUE & PEDAGOGIE : AFFICHAGE DE LA SOLUTION DETAILLEE ---
+                 document.getElementById('submit-btn').disabled = true;
+                 let explanationHTML = generateExplanation();
+                 
+                 feedback.innerHTML = `
+                    <div class="sol-container">
+                        <div class="sol-title">⛔ ANALYSE DE L'ÉCHEC</div>
+                        ${explanationHTML}
+                        <button class="btn-restart" onclick="initGame()">🔄 TENTER UNE NOUVELLE MISSION</button>
+                    </div>`;
+            } else {
+                 feedback.innerHTML = `<div style="background:rgba(248, 113, 113, 0.2); border:1px solid #f87171; color:#fca5a5; padding:15px;">⚠️ Vérifiez vos données (${GAME.attempts}/3).</div>`;
+            }
+        }
+    }
+
+    function toggleStatus(stepId, indId, inputEl, isValid) {
+        if (isValid) {
+            document.getElementById(stepId).classList.add('success');
+            document.getElementById(indId).classList.add('valid');
+            inputEl.classList.add('input-valid');
+        } else {
+            document.getElementById(stepId).classList.remove('success');
+            document.getElementById(indId).classList.remove('valid');
+            inputEl.classList.remove('input-valid');
+        }
+    }
+
+    function addScore() {
+        GAME.score++;
+        updateMapProgress(); 
+        if (GAME.score >= GAME.required) setTimeout(levelUp, 1500);
+        else setTimeout(initGame, 1500);
+    }
+
+    function updateMapProgress() {
+        let currentSteps = (GAME.tier - 1) * GAME.required + GAME.score;
+        if (GAME.tier >= 5) currentSteps = MAX_TRAVEL_STEPS;
+        let ratio = currentSteps / MAX_TRAVEL_STEPS;
+        let newOffset = pathTotalLength * (1 - ratio);
+        const visualPath = document.getElementById('map-fill');
+        if(visualPath) visualPath.style.strokeDashoffset = newOffset;
+    }
+
+    function levelUp() {
+        if (GAME.tier < 5) {
+            GAME.tier++; GAME.score = 0;
+            document.getElementById('node-'+(GAME.tier-1)).classList.add('done');
+            let nextNode = document.getElementById('node-'+GAME.tier);
+            document.querySelectorAll('.map-node').forEach(n => n.classList.remove('active'));
+            nextNode.classList.add('active');
+            movePlayer(REGIONS[GAME.tier].cx, REGIONS[GAME.tier].cy);
+            
+            document.getElementById('modal-emoji').innerText = "📍";
+            document.getElementById('levelup-msg').innerHTML = `Bienvenue dans : <b>${REGIONS[GAME.tier].name}</b>`;
+            document.getElementById('levelup-modal').style.display = 'flex';
+        } else {
+            movePlayer(REGIONS[5].cx, REGIONS[5].cy); 
+            updateMapProgress();
+            document.getElementById('modal-emoji').innerText = "🏆";
+            document.getElementById('levelup-msg').innerHTML = "La route est sûre.<br>Le Niveau 2 est accessible.";
+            document.getElementById('levelup-modal').style.display = 'flex';
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('final-btn').style.display = 'block';
+        }
+    }
+
+    function movePlayer(x, y) {
+        document.getElementById('player').setAttribute('cx', x);
+        document.getElementById('player').setAttribute('cy', y);
+    }
+
+    function closeLevelUp() {
+        document.getElementById('levelup-modal').style.display = 'none';
+        updateUI(); initGame();
+    }
+
+    function updateUI() {
+        let r = REGIONS[GAME.tier];
+        document.getElementById('region-name').innerText = `ZONE ${GAME.tier} : ${r.name}`;
+        document.getElementById('region-badge').style.background = r.color;
+        document.documentElement.style.setProperty('--accent', r.color);
+        document.documentElement.style.setProperty('--path-active', r.color); 
+        document.getElementById('map-fill').style.stroke = r.color;
+        
+        document.querySelectorAll('.status-step').forEach(e => e.classList.remove('success'));
+        document.querySelectorAll('.input-indicator').forEach(e => e.classList.remove('valid'));
+        document.querySelectorAll('input, textarea').forEach(e => e.classList.remove('input-valid'));
+        
+        let counter = document.getElementById('mission-counter');
+        if (counter && GAME.tier < 5) {
+             counter.innerText = `${GAME.score + 1} / ${GAME.required}`;
+             counter.style.display = 'inline-block';
+        } else if (counter) counter.style.display = 'none';
+    }
+
+    function resetUI() {
+        document.getElementById('input-model').value = "";
+        document.getElementById('input-resolve').value = "";
+        document.getElementById('input-redact').value = "";
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('feedback-area').style.display = 'none';
+    }
+
+    function goToNextLevel() { window.location.href = 'INEQUATION_TABLEAUX_JEUX_NIVEAU_2.html'; }
+</script>
+</body>
+</html>
