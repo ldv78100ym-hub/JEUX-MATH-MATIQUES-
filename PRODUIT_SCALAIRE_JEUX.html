@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quête : Maîtrise du Produit Scalaire</title>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a; /* Bleu nuit profond */
+            --text-color: #e2e8f0; /* Blanc cassé */
+            --accent-color: #3b82f6; /* Bleu électrique */
+            --success-color: #10b981; /* Vert succès */
+            --error-color: #ef4444; /* Rouge erreur */
+            --panel-bg: #1e293b; /* Gris bleu foncé pour les panneaux */
+            --input-bg: #334155; /* Gris bleu pour les inputs */
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-color) 0%, #1e1b4b 100%);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: rgba(30, 41, 59, 0.95); /* Panel BG avec transparence */
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 0 0 2px var(--accent-color);
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+        }
+        
+        /* Effet de scanline futuriste */
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(transparent 0px, transparent 2px, rgba(59, 130, 246, 0.05) 3px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #quest-level {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--accent-color);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .region-badge {
+            display: inline-block;
+            background: linear-gradient(90deg, var(--accent-color), #8b5cf6);
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        h1#mission-title {
+            margin: 0 0 30px 0;
+            font-size: 2.2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #fff, var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mission-box {
+            background-color: var(--input-bg);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #475569;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 2;
+        }
+
+        #quest-description {
+            font-style: italic;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+
+        .math-display {
+            font-size: 1.5em;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            border: 1px dashed var(--accent-color);
+            overflow-x: auto;
+        }
+
+        .question-text {
+            font-weight: bold;
+            font-size: 1.1em;
+            display: block;
+            margin-top: 20px;
+            color: var(--accent-color);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+            display: inline-block;
+            margin: 10px;
+            width: calc(50% - 25px);
+            min-width: 250px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #cbd5e1;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #475569;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        button#submit-btn, button#next-btn {
+            background: linear-gradient(to bottom right, var(--accent-color), #2563eb);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button#submit-btn:hover, button#next-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+        }
+        
+        button#next-btn {
+             background: linear-gradient(to bottom right, var(--success-color), #059669);
+             display: none;
+        }
+
+        #feedback-area {
+            margin-top: 30px;
+            min-height: 60px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        .feedback-success {
+            background-color: rgba(16, 185, 129, 0.2);
+            border: 2px solid var(--success-color);
+            color: var(--success-color);
+        }
+        .feedback-error {
+             background-color: rgba(239, 68, 68, 0.2);
+            border: 2px solid var(--error-color);
+            color: var(--error-color);
+        }
+
+        #copyright-btn {
+            background: #334155;
+            color: #94a3b8;
+            border: none;
+            padding: 12px;
+            font-size: 0.9em;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 40px;
+            transition: color 0.3s;
+             position: relative;
+            z-index: 2;
+        }
+        #copyright-btn:hover {
+            color: var(--text-color);
+        }
+
+        /* Styles de la modale */
+        .modal {
+            display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background-color: var(--panel-bg); margin: 10% auto; padding: 30px;
+            border: 2px solid var(--accent-color); width: 80%; max-width: 600px;
+            border-radius: 15px; color: var(--text-color); text-align: left;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+        }
+        .close-btn {
+            color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;
+        }
+        .close-btn:hover { color: var(--accent-color); }
+        .modal-content h3 { color: var(--accent-color); border-bottom: 1px solid #475569; padding-bottom: 10px;}
+        .modal-content ul { padding-left: 20px; }
+        .modal-content li { margin-bottom: 10px; }
+        
+        /* --- STYLE ÉMOTICÔNES & SUPERPOSITION --- */
+        #emoji-display {
+            font-size: 10em;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+        }
+
+        /* Classe d'animation qui sera ajoutée/retirée par JavaScript */
+        .fade-animation {
+            animation: fade-emoji 2.5s ease-out forwards;
+        }
+
+        /* Définition de l'animation : Apparaît puis s'estompe lentement */
+        @keyframes fade-emoji {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            10% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="quest-level">CHARGEMENT...</div>
+    <div class="region-badge">
+        <span id="region-name">VECTEURS & GÉOMÉTRIE</span>
+    </div>
+    
+    <h1 id="mission-title">🚀 DÉFI : MAÎTRISE DU PRODUIT SCALAIRE</h1>
+    
+    <div id="mission-content" class="mission-box">
+        <p id="quest-description">Description de la mission en cours...</p>
+        
+        <div class="math-display" id="function-display">Initialisation...</div>
+        
+        <div id="graph-container" style="display:none; margin: 20px auto;">
+            <canvas id="geometryCanvas" width="400" height="250" style="background:#fff; border-radius:8px;"></canvas>
+        </div>
+        
+        <span class="question-text" id="question-text">Question spécifique...</span>
+    </div>
+    
+    <div class="input-group" id="input-group-reponse-num">
+        <label for="input-reponse-num">Votre Réponse (Valeur numérique)</label>
+        <input type="text" id="input-reponse-num" placeholder="Ex: 12.5 ou -4">
+    </div>
+    
+    <button id="submit-btn">🔍 VÉRIFIER LA SOLUTION</button>
+    <button id="next-btn">MISSION SUIVANTE ➔</button>
+    
+    <div id="feedback-area">En attente de votre réponse...</div>
+    
+    <button id="copyright-btn">⚖️ Droits d'Auteur et Licence</button>
+
+</div>
+
+<div id="emoji-display"></div>
+
+<div id="copyright-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        
+        <h3>⚖️ Droits d'Auteur et Licence</h3>
+        <p>Auteur : <strong>Yann Merdy</strong> (yann.merdy@gmail.com)<br>
+           Date : Novembre 2025</p>
+        <h4>Licence d'Utilisation Non Commerciale</h4>
+        <p>Ce code HTML/CSS/JavaScript ainsi que le contenu généré sont la propriété intellectuelle exclusive de l'auteur.</p>
+        <ul>
+            <li>✅ <strong>Utilisation Privée et Éducative :</strong> Vous êtes autorisé.e à utiliser, copier, modifier et distribuer ce code à des fins personnelles, éducatives et non lucratives.</li>
+            <li>🚫 <strong>Utilisation Commerciale :</strong> Toute utilisation commerciale ou professionnelle est strictement interdite sans accord écrit.</li>
+            <li>✍️ <strong>Attribution :</strong> Toute reproduction doit conserver la mention de l'auteur original.</li>
+        </ul>
+        </div>
+</div>
+
+<script>
+    // --- UTILITAIRES MATHÉMATIQUES ---
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    function fmt(n) { return n < 0 ? "(" + n + ")" : n; }
+
+    // --- MOTEUR GRAPHIQUE (Pour Al-Kashi) ---
+    function drawAlKashiTriangle(OA, OB, degAngle) {
+        const canvas = document.getElementById('geometryCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        
+        const maxSide = Math.max(OA, OB);
+        const scale = 180 / maxSide; 
+        const angleRad = -degAngle * Math.PI / 180;
+
+        const Ox = 50; const Oy = 200;
+        const Ax = Ox + OA * scale; const Ay = Oy;
+        const Bx = Ox + OB * scale * Math.cos(angleRad); const By = Oy + OB * scale * Math.sin(angleRad);
+
+        ctx.beginPath(); ctx.moveTo(Ox, Oy); ctx.lineTo(Ax, Ay); ctx.lineTo(Bx, By); ctx.closePath();
+        ctx.strokeStyle = "#333"; ctx.lineWidth = 3; ctx.stroke();
+
+        ctx.fillStyle = "red";
+        [[Ox,Oy],[Ax,Ay],[Bx,By]].forEach(([x,y]) => { ctx.beginPath(); ctx.arc(x, y, 4, 0, 2*Math.PI); ctx.fill(); });
+
+        ctx.fillStyle = "black"; ctx.font = "bold 16px Arial";
+        ctx.fillText("O", Ox-20, Oy+5); ctx.fillText("A", Ax+10, Ay+5); ctx.fillText("B", Bx, By-15);
+
+        ctx.fillStyle = "#0056b3"; ctx.font = "14px Arial";
+        ctx.fillText(OA, (Ox+Ax)/2 - 10, Oy+20);
+        ctx.fillText(OB, (Ox+Bx)/2 - 30, (Oy+By)/2);
+
+        ctx.beginPath(); ctx.arc(Ox, Oy, 30, angleRad, 0); ctx.strokeStyle = "#28a745"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = "#28a745"; ctx.fillText(degAngle + "°", Ox + 35, Oy - 10);
+    }
+
+
+    // --- GÉNÉRATEURS D'EXERCICES ---
+
+    const Generators = {
+        analyticDot: function() {
+            let ux = getRandomInt(-5, 5), uy = getRandomInt(-5, 5);
+            let vx = getRandomInt(-5, 5), vy = getRandomInt(-5, 5);
+            if (ux === 0 && uy === 0) ux = 2; if (vx === 0 && vy === 0) vx = 3;
+            
+            let dot = ux * vx + uy * vy;
+            let tex = `\\vec{u} \\begin{pmatrix} ${ux} \\\\ ${uy} \\end{pmatrix} \\quad \\text{et} \\quad \\vec{v} \\begin{pmatrix} ${vx} \\\\ ${vy} \\end{pmatrix}`;
+            return {
+                tex: tex,
+                question: "Calculer le produit scalaire \\(\\vec{u} \\cdot \\vec{v}\\).", 
+                expected: dot,
+                tolerance: 0.001,
+                hint: "Formule analytique : \\(xx' + yy'\\)."
+            };
+        },
+        analyticOrtho: function() {
+            let ux = getRandomInt(1, 6), uy = getRandomInt(-6, 6); if(uy===0) uy=2;
+            let vx = getRandomInt(-6, 6); if(vx===0) vx=3;
+            let k = getRandomInt(-3, 3); if(k===0) k=1;
+            vx = uy * k; vy = -ux * k; 
+            
+            let hideVx = Math.random() < 0.5;
+            let expected = hideVx ? vx : vy;
+            let texV, questionVar;
+
+             if (hideVx) {
+                texV = `\\vec{v} \\begin{pmatrix} x_v \\\\ ${vy} \\end{pmatrix}`;
+                questionVar = "x_v";
+                expected = vx;
+            } else {
+                texV = `\\vec{v} \\begin{pmatrix} ${vx} \\\\ y_v \\end{pmatrix}`;
+                questionVar = "y_v";
+                expected = vy;
+            }
+
+
+            let tex = `\\vec{u} \\begin{pmatrix} ${ux} \\\\ ${uy} \\end{pmatrix} \\quad \\text{et} \\quad ${texV}. \\quad \\text{On sait que } \\vec{u} \\perp \\vec{v}.`;
+            return {
+                tex: tex,
+                question: `Déterminer la valeur de \\(${questionVar}\\).`,
+                expected: expected,
+                tolerance: 0.001,
+                hint: "Deux vecteurs sont orthogonaux si leur produit scalaire est nul."
+            };
+        },
+
+        geoDotRadian: function() {
+            let nU = getRandomInt(2, 8); let nV = getRandomInt(2, 8);
+            let bases = [
+                { den: 6, cos: Math.sqrt(3)/2, tex: "\\frac{\\pi}{6}" }, { den: 4, cos: Math.sqrt(2)/2, tex: "\\frac{\\pi}{4}" },
+                { den: 3, cos: 0.5, tex: "\\frac{\\pi}{3}" }, { den: 2, cos: 0, tex: "\\frac{\\pi}{2}" }
+            ];
+            let base = bases[getRandomInt(0, 3)];
+            let type = getRandomInt(0,3);
+            let angleTex, cosVal;
+            if(type === 0) { angleTex = base.tex; cosVal = base.cos; }
+            else if(type === 1) { angleTex = `-\\frac{\\pi}{${base.den}}`; cosVal = base.cos; }
+            else if(type === 2) { angleTex = `\\frac{${base.den-1}\\pi}{${base.den}}`; cosVal = -base.cos; }
+            else { angleTex = `\\frac{${base.den+1}\\pi}{${base.den}}`; cosVal = -base.cos; }
+
+            let dot = nU * nV * cosVal;
+
+            let tex = `\\left\\Vert \\vec{u}\\right\\Vert = ${nU}, \\quad \\left\\Vert \\vec{v} \\right\\Vert = ${nV}, \\quad (\\vec{u}, \\vec{v}) = ${angleTex} \\text{ rad}.`;
+            return {
+                tex: tex,
+                question: "Calculer la valeur exacte du produit scalaire (donner une valeur décimale approchée si besoin).",
+                expected: dot,
+                tolerance: 0.05,
+                hint: "Formule géométrique : \\(\\left\\Vert \\vec{u}\\right\\Vert \\times \\left\\Vert \\vec{v} \\right\\Vert \\times \\cos(\\theta)\\)."
+            };
+        },
+        geoFindAngle: function() {
+             let ux = getRandomInt(1, 5), uy = getRandomInt(1, 5);
+             let vx = getRandomInt(1, 5), vy = getRandomInt(-5, 5);
+             if(ux===0 && uy===0) ux=1; if(vx===0 && vy===0) vx=1;
+
+             let dot = ux*vx + uy*vy;
+             let nU = Math.sqrt(ux*ux + uy*uy);
+             let nV = Math.sqrt(vx*vx + vy*vy);
+             let cosTheta = dot / (nU * nV);
+             let thetaDeg = Math.acos(Math.max(-1, Math.min(1, cosTheta))) * (180 / Math.PI);
+
+             let tex = `\\vec{u} \\begin{pmatrix} ${ux} \\\\ ${uy} \\end{pmatrix} \\quad \\text{et} \\quad \\vec{v} \\begin{pmatrix} ${vx} \\\\ ${vy} \\end{pmatrix}`;
+             return {
+                tex: tex,
+                question: "Déterminer la mesure de l'angle \\(\\theta = (\\vec{u}, \\vec{v})\\) en degrés (arrondir à l'unité).",
+                expected: Math.round(thetaDeg),
+                tolerance: 1.0,
+                hint: "Calculez d'abord le produit scalaire et les normes, puis isolez \\(\\cos(\\theta)\\)."
+             };
+        },
+
+        squareId: function() {
+            let u=getRandomInt(3,8), v=getRandomInt(3,8), dot=getRandomInt(-u*v+1, u*v);
+            let nsq = u*u + v*v + 2*dot;
+            let expected = Math.sqrt(nsq);
+
+            let tex = `\\left\\Vert \\vec{u} \\right\\Vert = ${u}, \\quad \\left\\Vert \\vec{v} \\right\\Vert = ${v}, \\quad \\vec{u} \\cdot \\vec{v} = ${dot}.`;
+            return {
+                tex: tex,
+                question: "Calculer \\(\\left\\Vert \\vec{u} + \\vec{v} \\right\\Vert\\) (valeur décimale).",
+                expected: expected,
+                tolerance: 0.02,
+                hint: "Utilisez le carré scalaire : \\(\\left\\Vert \\vec{u} + \\vec{v} \\right\\Vert^2 = \\dots\\)"
+            };
+        },
+        polarization: function() {
+            let nU = getRandomInt(3, 7); let nV = getRandomInt(3, 7);
+            let angleRad = getRandomInt(0, 180) * Math.PI / 180;
+            let dot = nU * nV * Math.cos(angleRad);
+            let nSum2 = nU*nU + nV*nV + 2*dot;
+
+            let tex = `\\left\\Vert \\vec{u} \\right\\Vert = ${nU}, \\quad \\left\\Vert \\vec{v} \\right\\Vert = ${nV}, \\quad \\left\\Vert \\vec{u} + \\vec{v} \\right\\Vert^2 = ${nSum2.toFixed(1)}.`;
+            return {
+                tex: tex,
+                question: "Calculer le produit scalaire \\(\\vec{u} \\cdot \\vec{v}\\).",
+                expected: dot,
+                tolerance: 0.1,
+                hint: "Utilisez la formule de polarisation reliant les trois normes."
+            };
+        },
+
+        workForce: function() {
+             let F = getRandomInt(50, 200);
+             let d = getRandomInt(10, 50);
+             let angleDeg = getRandomInt(0, 60);
+             let work = F * d * Math.cos(angleDeg * Math.PI / 180);
+
+             let tex = `Force \\(F = ${F} \\text{ N}\\), Déplacement \\(d = ${d} \\text{ m}\\). Angle entre la force et le déplacement : \\(\\alpha = ${angleDeg}^\\circ\\).`;
+             return {
+                 tex: tex,
+                 question: "Calculer le travail \\(W\\) de la force en Joules.",
+                 expected: work,
+                 tolerance: 1.0,
+                 hint: "Travail = \\( \\vec{F} \\cdot \\vec{d} = F \\times d \\times \\cos(\\alpha) \\)."
+             };
+        },
+        alKashiSide: function() {
+            let b = getRandomInt(5, 15); let c = getRandomInt(5, 15);
+            let angleA = getRandomInt(30, 120);
+            let a2 = b*b + c*c - 2*b*c * Math.cos(angleA * Math.PI / 180);
+            let a = Math.sqrt(a2);
+
+            return {
+                tex: `Dans un triangle ABC : \\(AC = b = ${b}\\), \\(AB = c = ${c}\\), \\(\\widehat{A} = ${angleA}^\\circ\\).`,
+                question: "Calculer la longueur du côté \\(BC = a\\).",
+                expected: a,
+                tolerance: 0.05,
+                hint: "Théorème d'Al-Kashi : \\(a^2 = b^2 + c^2 - 2bc \\cos(\\widehat{A})\\).",
+                hasGraph: true,
+                drawGraph: function() { drawAlKashiTriangle(c, b, angleA); }
+            };
+        },
+
+        mixedMystery: function() {
+            let ux=getRandomInt(2,6), uy=getRandomInt(2,6);
+            let vx=getRandomInt(2,6), vy=getRandomInt(-6,6);
+            let dot = ux*vx + uy*vy;
+            let nU = Math.sqrt(ux*ux+uy*uy);
+            let nV = Math.sqrt(vx*vx+vy*vy);
+            
+            let tex = `\\left\\Vert \\vec{u} \\right\\Vert \\approx ${nU.toFixed(2)}, \\quad \\left\\Vert \\vec{v} \\right\\Vert \\approx ${nV.toFixed(2)}, \\quad \\vec{u} \\cdot \\vec{v} = ${dot}.`;
+            let expected = dot / (nU * nV);
+            
+            return {
+                tex: tex,
+                question: "Déterminer la valeur de \\(\\cos(\\theta)\\).",
+                expected: expected,
+                tolerance: 0.001,
+                hint: "Combinez les données avec la définition géométrique du produit scalaire."
+            };
+        }
+    };
+
+    // --- DONNÉES DU JEU ---
+
+    const gameData = [
+        {
+            levelTitle: "NIVEAU 1 : BASES ANALYTIQUES", region: "COORDONNÉES CARTÉSIENNES",
+            steps: [{ generator: Generators.analyticDot, desc: "Calcul direct via les coordonnées." }, { generator: Generators.analyticOrtho, desc: "Utiliser l'orthogonalité pour trouver une inconnue." }, { generator: Generators.analyticDot, desc: "Encore un calcul pour bien ancrer la formule." }, { generator: Generators.analyticOrtho, desc: "Dernière vérification d'orthogonalité." }]
+        },
+        {
+            levelTitle: "NIVEAU 2 : L'ESSENCE GÉOMÉTRIQUE", region: "NORMES ET ANGLES",
+            steps: [{ generator: Generators.geoDotRadian, desc: "Produit scalaire avec angle remarquable." }, { generator: Generators.geoFindAngle, desc: "Retrouver un angle à partir des coordonnées." }, { generator: Generators.geoDotRadian, desc: "Attention aux angles obtus ou négatifs." }, { generator: Generators.geoFindAngle, desc: "Un autre angle à déterminer." }]
+        },
+         {
+            levelTitle: "NIVEAU 3 : IDENTITÉS ET NORMES", region: "CARRÉ SCALAIRE & POLARISATION",
+            steps: [{ generator: Generators.squareId, desc: "Calculer la norme d'une somme." }, { generator: Generators.polarization, desc: "Retrouver le produit scalaire via les normes." }, { generator: Generators.squareId, desc: "Identité remarquable vectorielle." }, { generator: Generators.polarization, desc: "Formule de polarisation." }]
+        },
+        {
+            levelTitle: "NIVEAU 4 : APPLICATIONS CONCRÈTES", region: "PHYSIQUE & TRIANGLES",
+            steps: [{ generator: Generators.workForce, desc: "Calculer le travail d'une force." }, { generator: Generators.alKashiSide, desc: "Utiliser le théorème d'Al-Kashi." }, { generator: Generators.workForce, desc: "Travail moteur ou résistant ?" }, { generator: Generators.alKashiSide, desc: "Généralisation de Pythagore." }]
+        },
+         {
+            levelTitle: "NIVEAU 5 : LE DÉFI ULTIME", region: "SYNTHÈSE DES CONNAISSANCES",
+            steps: [{ generator: Generators.mixedMystery, desc: "Mélange des définitions." }, { generator: Generators.analyticOrtho, desc: "Retour sur l'orthogonalité." }, { generator: Generators.geoFindAngle, desc: "Trouver l'angle." }, { generator: Generators.mixedMystery, desc: "Dernier défi de synthèse." }]
+        }
+    ];
+
+    // --- ÉTAT DU JEU ---
+    let gameState = {
+        currentLevelIndex: 0,
+        currentStepIndex: 0,
+        currentSolution: null,
+        currentTolerance: 0,
+        isLevelFinished: false
+    };
+
+    // --- ÉTAT GLOBAL POUR LE SUIVI DES ERREURS ---
+    let errorCount = 0;
+
+    // --- LOGIQUE PRINCIPALE ---
+
+    function initGame() {
+        gameState.currentLevelIndex = 0;
+        gameState.currentStepIndex = 0;
+        loadStep();
+
+        document.getElementById('submit-btn').addEventListener('click', checkAnswer);
+        document.getElementById('next-btn').addEventListener('click', nextStep);
+        
+        const modal = document.getElementById('copyright-modal');
+        const btn = document.getElementById('copyright-btn');
+        const span = document.getElementsByClassName("close-btn")[0];
+        btn.onclick = () => modal.style.display = "block";
+        span.onclick = () => modal.style.display = "none";
+        window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; }
+    }
+    
+    // Fonction gérant l'affichage de l'émoticône et l'animation (SUPERPOSITION)
+    function showFeedbackWithEmoji(message, isSuccess) {
+        const feedbackArea = document.getElementById('feedback-area');
+        const emojiDisplay = document.getElementById('emoji-display');
+        
+        feedbackArea.innerHTML = message;
+        feedbackArea.className = isSuccess ? "feedback-success" : "feedback-error";
+
+        let emoji = "";
+
+        if (isSuccess) {
+            emoji = "🎉"; 
+        } else {
+            switch(errorCount) {
+                case 1: emoji = "🤔"; // Interrogation (1ère erreur)
+                    break;
+                case 2: emoji = "😟"; // Triste (2ème erreur)
+                    break;
+                case 3: 
+                default: emoji = "😡"; // Mécontentement (3ème erreur et suivantes)
+            }
+        }
+        
+        // 1. Afficher l'émoticône
+        emojiDisplay.innerHTML = emoji;
+        
+        // 2. Déclencher l'animation de superposition
+        emojiDisplay.classList.remove('fade-animation'); 
+        
+        // Trick JS pour forcer la réinitialisation de l'animation
+        void emojiDisplay.offsetWidth; 
+        
+        emojiDisplay.classList.add('fade-animation');
+    }
+
+
+    function loadStep() {
+        const levelData = gameData[gameState.currentLevelIndex];
+        const stepData = levelData.steps[gameState.currentStepIndex];
+        
+        // --- Réinitialisation importante ---
+        errorCount = 0; 
+        document.getElementById('emoji-display').innerHTML = "";
+        document.getElementById('emoji-display').classList.remove('fade-animation'); 
+        // ------------------------------------
+
+        // Reset UI
+        document.getElementById('feedback-area').innerText = "En attente de votre réponse...";
+        document.getElementById('feedback-area').className = "";
+        document.getElementById('submit-btn').style.display = "inline-block";
+        document.getElementById('next-btn').style.display = "none";
+        document.getElementById('input-reponse-num').value = "";
+        document.getElementById('graph-container').style.display = "none";
+        gameState.isLevelFinished = false;
+
+        // Mise à jour titres
+        document.getElementById('quest-level').innerText = `QUÊTE ${gameState.currentLevelIndex + 1} / ${gameData.length} | ÉTAPE ${gameState.currentStepIndex + 1} / ${levelData.steps.length}`;
+        document.getElementById('region-name').innerText = levelData.region;
+        document.getElementById('mission-title').innerText = levelData.levelTitle;
+        document.getElementById('quest-description').innerText = stepData.desc;
+
+        // Génération de l'exercice
+        const exercise = stepData.generator();
+        gameState.currentSolution = exercise.expected;
+        gameState.currentTolerance = exercise.tolerance || 0.000001;
+        gameState.currentHint = exercise.hint;
+
+        // Affichage MathJax pour la formule principale
+        const mathDisplay = document.getElementById('function-display');
+        mathDisplay.innerHTML = `\\[ ${exercise.tex} \\]`;
+        MathJax.typesetPromise([mathDisplay]);
+
+        // Affichage Question
+        const questionTextElement = document.getElementById('question-text');
+        // Utiliser innerHTML pour que MathJax puisse interpréter la chaîne
+        questionTextElement.innerHTML = exercise.question; 
+        // Forcer le rendu MathJax sur la question
+        MathJax.typesetPromise([questionTextElement]);
+
+        // Affichage Graphique si nécessaire
+        if(exercise.hasGraph && exercise.drawGraph) {
+            document.getElementById('graph-container').style.display = "block";
+            exercise.drawGraph();
+        }
+    }
+
+
+    function checkAnswer() {
+        if(gameState.isLevelFinished) return;
+
+        const userInputs = document.getElementById('input-reponse-num').value.trim();
+        if (userInputs === "") {
+            showFeedbackWithEmoji("Veuillez entrer une valeur numérique.", false); 
+            return;
+        }
+
+        // Remplacement de la virgule par un point pour le parsing
+        let userVal = parseFloat(userInputs.replace(',', '.'));
+        
+        if(isNaN(userVal)) {
+             showFeedbackWithEmoji("Ceci n'est pas un nombre valide.", false);
+             return;
+        }
+
+        // Vérification avec tolérance
+        let isCorrect = Math.abs(userVal - gameState.currentSolution) <= gameState.currentTolerance;
+
+        if (isCorrect) {
+            errorCount = 0;
+            showFeedbackWithEmoji("✅ MISSION RÉUSSIE ! Analyse correcte.", true);
+            document.getElementById('submit-btn').style.display = "none";
+            document.getElementById('next-btn').style.display = "inline-block";
+            gameState.isLevelFinished = true;
+        } else {
+            // Incrémentation de l'erreur
+            if (errorCount < 3) {
+                 errorCount++; 
+            }
+            
+            let feedback = "❌ Incorrect. Essayez encore.";
+            // Afficher l'indice après la 3ème erreur ou plus
+            if(errorCount >= 3 && gameState.currentHint) {
+                 feedback += `<br>💡 Indice : ${gameState.currentHint}`;
+            }
+            showFeedbackWithEmoji(feedback, false);
+        }
+    }
+
+
+    function nextStep() {
+        const levelData = gameData[gameState.currentLevelIndex];
+        
+        if (gameState.currentStepIndex < levelData.steps.length - 1) {
+            gameState.currentStepIndex++;
+            loadStep();
+        } else {
+            if (gameState.currentLevelIndex < gameData.length - 1) {
+                gameState.currentLevelIndex++;
+                gameState.currentStepIndex = 0;
+                
+                document.getElementById('mission-content').style.opacity = 0;
+                setTimeout(() => {
+                    loadStep();
+                    document.getElementById('mission-content').style.opacity = 1;
+                }, 300);
+            } else {
+                // Fin du jeu
+                document.getElementById('quest-level').innerText = "MISSION ACCOMPLIE !";
+                document.getElementById('mission-title').innerText = "🎉 MAÎTRE DU PRODUIT SCALAIRE 🎉";
+                document.getElementById('mission-content').innerHTML = "<h2>Félicitations !</h2><p>Vous avez terminé tous les niveaux avec succès. Vous maîtrisez désormais les différentes facettes du produit scalaire.</p>";
+                document.getElementById('input-group-reponse-num').style.display = "none";
+                document.getElementById('submit-btn').style.display = "none";
+                document.getElementById('next-btn').style.display = "none";
+                document.getElementById('feedback-area').style.display = "none";
+                
+                // Émoticône finale qui reste
+                const emojiDisplay = document.getElementById('emoji-display');
+                emojiDisplay.innerHTML = "🏆";
+                emojiDisplay.classList.remove('fade-animation');
+                emojiDisplay.style.opacity = 1;
+                emojiDisplay.style.animation = 'none';
+            }
+        }
+    }
+
+    // Lancement au chargement
+    window.onload = initGame;
+
+</script>
+
+</body>
+</html>
